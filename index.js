@@ -18,7 +18,7 @@ const IMAGEN_EMBED = 'https://media.discordapp.net/attachments/14614849006361642
 
 // --- NUEVOS AJUSTES (Bienvenida y Verificación) ---
 const CANAL_BIENVENIDA = '1460923924249448448'; 
-const ROL_USUARIO = '1460923741541371914'; // ID de rol actualizada
+const ROL_USUARIO = '1460923741541371914'; 
 
 const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
@@ -27,6 +27,7 @@ const client = new Client({
 const commands = [
     new SlashCommandBuilder().setName('setup-tickets').setDescription('🛠️ Desplegar panel de soporte ShowMC'),
     new SlashCommandBuilder().setName('setup-verificacion').setDescription('🛡️ Desplegar panel de verificación'),
+    new SlashCommandBuilder().setName('setup-permisos').setDescription('🔐 Configurar permisos automáticos de canales'),
     new SlashCommandBuilder()
         .setName('limpiar')
         .setDescription('🧹 Borrar mensajes')
@@ -64,6 +65,51 @@ client.on('interactionCreate', async interaction => {
                     interaction.member?.roles.cache.has(ROL_PERMITIDO_2);
 
     if (interaction.isChatInputCommand()) {
+
+        // --- SETUP PERMISOS AUTOMÁTICOS ---
+        if (interaction.commandName === 'setup-permisos') {
+            if (!esStaff) return interaction.reply({ content: '❌ No tienes permiso.', ephemeral: true });
+            await interaction.deferReply({ ephemeral: true });
+
+            const rolUser = interaction.guild.roles.cache.get(ROL_USUARIO);
+            const canalesPublicos = ['1460923924249448448', '1460923926900248577', '1460923930230390814'];
+            const canalesChatPermitidos = ['chat', 'chat-vip', 'multimedia', 'sugerencias', 'comandos', 'clanes'];
+
+            const canales = await interaction.guild.channels.fetch();
+
+            for (const canal of canales.values()) {
+                if (!canal || canal.type === ChannelType.GuildCategory) continue;
+
+                if (!canalesPublicos.includes(canal.id)) {
+                    // Bloqueo por defecto: no ven nada
+                    await canal.permissionOverwrites.edit(rolUser, {
+                        ViewChannel: false,
+                        SendMessages: false,
+                        CreatePublicThreads: false,
+                        CreatePrivateThreads: false
+                    }).catch(() => {});
+                } else {
+                    // Canales de entrada: ven pero no escriben
+                    await canal.permissionOverwrites.edit(rolUser, {
+                        ViewChannel: true,
+                        SendMessages: false,
+                        CreatePublicThreads: false
+                    }).catch(() => {});
+                }
+
+                // Habilitar escritura en canales de comunidad específicos por nombre
+                if (canalesChatPermitidos.some(n => canal.name.toLowerCase().includes(n))) {
+                    await canal.permissionOverwrites.edit(rolUser, {
+                        ViewChannel: true,
+                        SendMessages: true,
+                        AttachFiles: true,
+                        CreatePublicThreads: false 
+                    }).catch(() => {});
+                }
+            }
+            return interaction.editReply({ content: '✅ Configuración de permisos completada para ShowMC.' });
+        }
+
         // --- SETUP VERIFICACIÓN ---
         if (interaction.commandName === 'setup-verificacion') {
             if (!esStaff) return interaction.reply({ content: '❌ No tienes permiso.', ephemeral: true });
