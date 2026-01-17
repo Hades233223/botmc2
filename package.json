@@ -1,0 +1,13 @@
+{
+  "name": "showmc-bot",
+  "version": "1.0.0",
+  "description": "Bot para ShowMC Network",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.x.x",
+    "http": "^0.0.1-security"
+  }
+}
