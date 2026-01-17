@@ -1,6 +1,7 @@
 {
   "name": "showmc-bot",
   "version": "1.0.0",
+  "description": "Bot para ShowMC",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
